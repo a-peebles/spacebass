@@ -1,0 +1,44 @@
+#ifndef __MIDIRECEIVER__
+#define __MIDIRECEIVER__
+#pragma clang diagnostic push
+#pragma clang diagnostic gnored "-Wextra-tokeos"
+#include "IPlug_include_in_plug_hdr.h"
+#pragma clang diagnostic pop
+
+#include "IMidiQueue.h"
+#include "GallantSignal.h"
+using Gallant::Signal2;
+
+class MIDIReceiver {
+private:
+	IMidiQueue mMidiQueue;
+	static const int keyCount  = 128;
+	int mNumKeys; // how many keys simaultanously
+	bool mKeyStatus[keyCount]; // array if on/off for each key (index is note no.)
+	int mOffset;
+	inline double noteNumberToFrequency(int noteNumber) { return 440.0 * pow(2.0, (noteNumber - 69.0) / 12.0); }
+
+
+public:
+	MIDIReceiver() :
+	mNumKeys(0),
+	mOffset(0) {
+		for (int i = 0; i < keyCount; i++) {
+			mKeyStatus[i] = false;
+		}
+	};
+
+	// Returns true if key with a given index is pressed
+	inline bool getKeyStatus(int keyIndex) const { return mKeyStatus[keyIndex]; }
+
+	// Returns no. of keys currently pressed
+	inline int getNumKeys() const { return mNumKeys; }
+	void advance();
+	void onMessageReceived(IMidiMsg* midiMessage);
+	inline void Flush(int nFrames) { mMidiQueue.Flush(nFrames); mOffset = 0; }
+	inline void Resize(int blockSize) { mMidiQueue.Resize(blockSize); }
+	Signal2< int, int > noteOn;
+	Signal2< int, int > noteOff;
+
+};
+#endif // !__MIDIRECEIVER__
